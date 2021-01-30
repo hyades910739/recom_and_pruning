@@ -108,14 +108,32 @@ class Deep_Prunable(keras.layers.Layer, tfmot.sparsity.keras.PrunableLayer):
         ]
 
     # @tf.function(input_signature=[tf.TensorSpec([None, None,], tf.float32)])
-    def call(self, sec_coef_v):
+    def call(self, sec_coef_v, training=False):
         res = sec_coef_v        
         for dense, bn in zip(self.denses[:-1], self.batch_norms):
             res = dense(res)
-            res = bn(res)
+            res = bn(res, training=training)
         res = self.denses[-1](res)
         return res
 
-
+def create_sequential_deep_model(hidden_dims:list, layer_prunables:list, batch_norm=True):
+    '''
+    hidden_dims: List[int].
+    layer_prunables: List[Bool]. whether to prune n-th dense layer.
+    '''
+    assert len(hidden_dims) == len(layer_prunables), \
+           'length of hidden_dims and layer_prunables should be equal'
+    model = tf.keras.Sequential([])
+    for dim, prune in zip(hidden_dims, layer_prunables):
+        layer = tf.keras.layers.Dense(dim)
+        if prune:
+            layer = tfmot.sparsity.keras.prune_low_magnitude(layer)
+        model.add(layer)
+        if batch_norm:
+            model.add(tf.keras.layers.BatchNormalization())
+    # add final output layer:
+    model.add(tf.keras.layers.Dense(1))
+    return model
+        
 
 

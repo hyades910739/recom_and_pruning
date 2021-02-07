@@ -2,6 +2,11 @@
 
 Implement some Recommendation model (deepFM, deepFwFm) and try model pruning using TFMOT(tensorflow_model_optimization).
 
+## Results 
+under development...  
+![auc_img](images/deepfwfm_auc.png)
+
+
 ## Current Issues:
 1. Custom layer failed when save model.  
 `tf.function` signature is necessary when save model, while add `tf.function` will raise error when training with `pruning_wrapper.PruneLowMagnitude`. This error is raised from `inspect.getfullargspec(layer.call)`, might be fixed with few code change.

@@ -44,7 +44,7 @@ class FieldWeightedFactorizationMachine(keras.layers.Layer):
     def get_config(self,):
         return {
             'num_field': self._num_field,
-            'embedding_dim': self.field_embedding.output_dim
+            # 'embedding_dim': self.field_embedding.output_dim
         }
 
     @tf.function(input_signature=[
@@ -74,6 +74,7 @@ class FieldWeightedFactorizationMachine(keras.layers.Layer):
         weighted_interaction = weighted_interaction / 2 
         output = batch_w0 + feature_field_interaction + weighted_interaction
         return output, coef_feature_embs
+
 
 
 class FactorizationMachines(keras.layers.Layer):

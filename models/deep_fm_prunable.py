@@ -2,12 +2,18 @@ import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow_model_optimization as tfmot
 from tensorflow_model_optimization.sparsity.keras import prune_low_magnitude
-from .prunable_layers import Deep_Prunable, Embedding_Prunalbe
-from .fm_layers import FactorizationMachines, FieldWeightedFactorizationMachine
+from prunable_layers import Deep_Prunable, Embedding_Prunalbe
+from fm_layers import FactorizationMachines, FieldWeightedFactorizationMachine
+from prunable_layers import create_sequential_deep_model
 
+
+# target_sparsity = 0.5
+# sparsity = tfmot.sparsity.keras.ConstantSparsity(
+#     target_sparsity, 3000, end_step=-1, frequency=500
+# )
 
 def create_sparsity_schedule(target_sparsity, start, end=-1, freq=300, mode='constant'):
-    'currently only support mode: constant'
+    'mode: constant'
     if mode == 'constant':
         return tfmot.sparsity.keras.ConstantSparsity(
             target_sparsity, start, end, freq
@@ -42,10 +48,9 @@ def create_deepfwfm_functional_model(n_categs, hidden_dims, layer_prunables, emb
     fm = FieldWeightedFactorizationMachine(second_embeddings, field_embedding, weighted_matrix_dense)
     #deep
     if hidden_dims:
-        if prune_deep_sparsity:
-            deep = prune_low_magnitude(Deep_Prunable(hidden_dims, layer_prunables), prune_deep_sparsity)            
-        else:
-            deep = Deep_Prunable(hidden_dims, layer_prunables)
+        deep = create_sequential_deep_model(
+            hidden_dims, layer_prunables, prune_deep_sparsity, batch_norm=True
+        )
     #model flow
     fm_out, second_emb = fm(index_inp, coef_inp)
     
@@ -93,10 +98,9 @@ def create_deepfm_functional_model(n_categs, hidden_dims, layer_prunables, emb_d
     fm = FactorizationMachines(first_embeddings, second_embeddings)
 
     #deep
-    if prune_deep_sparsity:
-        deep = prune_low_magnitude(Deep_Prunable(hidden_dims, layer_prunables), prune_deep_sparsity)
-    else:
-        deep = Deep_Prunable(hidden_dims, layer_prunables)
+    deep = create_sequential_deep_model(
+        hidden_dims, layer_prunables, prune_deep_sparsity, batch_norm=True
+    )
     
     # model 
     fm_out, second_emb = fm(index_inp, coef_inp)
@@ -136,4 +140,4 @@ class DeepFM_Prunable(tf.keras.Model):
             self.first_embeddings.append(Embedding_Prunalbe(0, n_categ, 1))
             self.second_embeddings.append(Embedding_Prunalbe(0.5, n_categ, emb_dim)) 
         
-            
+        

@@ -108,26 +108,29 @@ class Deep_Prunable(keras.layers.Layer, tfmot.sparsity.keras.PrunableLayer):
         ]
 
     # @tf.function(input_signature=[tf.TensorSpec([None, None,], tf.float32)])
-    def call(self, sec_coef_v, training=False):
+    def call(self, sec_coef_v):
         res = sec_coef_v        
         for dense, bn in zip(self.denses[:-1], self.batch_norms):
             res = dense(res)
-            res = bn(res, training=training)
+            res = bn(res)
         res = self.denses[-1](res)
         return res
 
-def create_sequential_deep_model(hidden_dims:list, layer_prunables:list, batch_norm=True):
+def create_sequential_deep_model(hidden_dims:list, layer_prunables:list, sparsity_schedules, batch_norm=True):
     '''
     hidden_dims: List[int].
     layer_prunables: List[Bool]. whether to prune n-th dense layer.
+    sparsity_schedules: List or tfmot.sparsity.keras.ConstantSparsity. The sparsity shedule.
     '''
     assert len(hidden_dims) == len(layer_prunables), \
            'length of hidden_dims and layer_prunables should be equal'
+    if not isinstance(sparsity_schedules, list):
+        sparsity_schedules = [sparsity_schedules] * len(hidden_dims)
     model = tf.keras.Sequential([])
-    for dim, prune in zip(hidden_dims, layer_prunables):
+    for dim, prune, sparse in zip(hidden_dims, layer_prunables, sparsity_schedules):
         layer = tf.keras.layers.Dense(dim)
         if prune:
-            layer = tfmot.sparsity.keras.prune_low_magnitude(layer)
+            layer = tfmot.sparsity.keras.prune_low_magnitude(layer, sparse)
         model.add(layer)
         if batch_norm:
             model.add(tf.keras.layers.BatchNormalization())

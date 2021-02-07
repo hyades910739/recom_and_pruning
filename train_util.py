@@ -23,4 +23,4 @@ def save_model(model, name):
         path = os.path.join(path, token)
         if not os.path.exists(path):
             os.mkdir(path)        
-    tf.saved_model.save(model, model_folder_path, signatures={"call": model.call})    
+    tf.saved_model.save(model, model_folder_path)    
